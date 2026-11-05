@@ -70,7 +70,7 @@ La documentación detallada y la planificación ágil se encuentran organizadas 
 
 1. **Clonar el repositorio y ubicarse en la raíz:**
    ```bash
-   git clone <URL_DEL_REPOSITORIO>
+   git clone https://github.com/gcolazo/gestion-academica
    cd gestion-academica
    ```
 
