@@ -8,7 +8,7 @@ Sistema de gestión académica web con enfoque **Mobile-First**, desarrollado en
 
 La documentación detallada y la planificación ágil se encuentran organizadas dentro de la carpeta [`doc/`](./doc/):
 
-0. **[doc/00-tablero-proyecto.md](./doc/00-tablero-proyecto.md)**: Plan de trabajo y seguimiento de historias de usuario en formato Kanban / Trello (Criterios de evaluación 10/10, tareas completadas, en proceso y backlog).
+0. **[doc/00-tablero-proyecto.md](./doc/00-tablero-proyecto.md)**: Plan de trabajo y seguimiento de historias de usuario en formato Kanban / Trello (tareas completadas, en proceso y backlog).
 1. **[doc/01-modelo-datos.md](./doc/01-modelo-datos.md)**: Especificación técnica del modelo relacional, diagrama Entidad-Relación (Mermaid), justificación de normalización 3FN y patrón Supertipo/Subtipo (`usuarios` ↔ `alumnos` / `profesores`).
 2. **[doc/02-seguridad.md](./doc/02-seguridad.md)**: Mecanismos de seguridad, autenticación por DNI, hashing de contraseñas con `bcrypt`, control de sesiones y matriz de permisos por Rol (RBAC).
 3. **[doc/03-alumnos.md](./doc/03-alumnos.md)**: Especificación funcional del módulo de alumnos, transacciones atómicas PDO, matriz de permisos de edición/baja y autogestión de perfil.
