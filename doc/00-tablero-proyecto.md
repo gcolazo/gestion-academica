@@ -60,7 +60,7 @@ Entregables técnicos finalizados, probados y verificados:
 
 ---
 
-## 🎯 Criterios de Evaluación y Cumplimiento (Target 10/10)
+## 🎯 Criterios de Evaluación y Cumplimiento
 
 | Criterio Evaluado por el Profesor | Estado | Evidencia / Ubicación |
 | :--- | :---: | :--- |
