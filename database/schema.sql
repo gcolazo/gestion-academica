@@ -31,10 +31,17 @@ CREATE TABLE `roles` (
   `descripcion` VARCHAR(255) NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- 2. Tabla: usuarios (Login por DNI)
+-- -----------------------------------------------------------------------------
+-- 2. Tabla: usuarios (Login por DNI + Datos Personales Centralizados)
+-- Supertipo: Centraliza credenciales, nivel de acceso y datos identificatorios
+-- -----------------------------------------------------------------------------
 CREATE TABLE `usuarios` (
   `id` INT AUTO_INCREMENT PRIMARY KEY,
   `dni` VARCHAR(20) NOT NULL UNIQUE,
+  `apellido` VARCHAR(100) NOT NULL,
+  `nombre` VARCHAR(100) NOT NULL,
+  `email` VARCHAR(150) NOT NULL UNIQUE,
+  `telefono` VARCHAR(50) NULL,
   `password_hash` VARCHAR(255) NOT NULL,
   `rol_id` INT NOT NULL,
   `creado_en` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -44,28 +51,26 @@ CREATE TABLE `usuarios` (
     ON DELETE RESTRICT ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- -----------------------------------------------------------------------------
 -- 3. Tabla: profesores
+-- Subtipo: Extensión de perfil docente vinculada a la entidad usuario
+-- -----------------------------------------------------------------------------
 CREATE TABLE `profesores` (
   `id` INT AUTO_INCREMENT PRIMARY KEY,
   `usuario_id` INT NOT NULL UNIQUE,
-  `apellido` VARCHAR(100) NOT NULL,
-  `nombre` VARCHAR(100) NOT NULL,
-  `email` VARCHAR(150) NOT NULL UNIQUE,
-  `telefono` VARCHAR(50) NULL,
   CONSTRAINT `fk_profesores_usuarios` 
     FOREIGN KEY (`usuario_id`) REFERENCES `usuarios` (`id`) 
     ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- -----------------------------------------------------------------------------
 -- 4. Tabla: alumnos
+-- Subtipo: Atributos académicos específicos vinculados a la entidad usuario
+-- -----------------------------------------------------------------------------
 CREATE TABLE `alumnos` (
   `id` INT AUTO_INCREMENT PRIMARY KEY,
   `usuario_id` INT NOT NULL UNIQUE,
   `legajo` VARCHAR(50) NOT NULL UNIQUE,
-  `apellido` VARCHAR(100) NOT NULL,
-  `nombre` VARCHAR(100) NOT NULL,
-  `email` VARCHAR(150) NOT NULL UNIQUE,
-  `telefono` VARCHAR(50) NULL,
   `estado` ENUM('Activo', 'Inactivo') NOT NULL DEFAULT 'Activo',
   CONSTRAINT `fk_alumnos_usuarios` 
     FOREIGN KEY (`usuario_id`) REFERENCES `usuarios` (`id`) 

@@ -5,12 +5,11 @@ requerirAuth();
 $tituloPagina = 'Mi Perfil';
 $paginaActiva = 'perfil';
 $usuarioId = $_SESSION['user_id'];
-$rolId     = $_SESSION['rol_id'];
 $mensaje   = '';
 $tipoMensaje = 'info';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    if (actualizarMiPerfil($pdo, $usuarioId, $rolId, $_POST)) {
+    if (actualizarMiPerfil($pdo, $usuarioId, $_POST)) {
         $mensaje = 'Tus datos fueron actualizados correctamente.';
         $tipoMensaje = 'success';
     } else {
@@ -19,24 +18,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-// Consultar datos según el Rol
-$datos = [];
-if ($rolId == 1) { // Admin
-    $stmt = $pdo->prepare("SELECT dni FROM usuarios WHERE id = :uid");
-    $stmt->execute(['uid' => $usuarioId]);
-    $datos = $stmt->fetch();
-    $datos['nombre_completo'] = $_SESSION['nombre_comp'];
-} elseif ($rolId == 2) { // Profesor
-    $stmt = $pdo->prepare("SELECT p.*, u.dni FROM profesores p INNER JOIN usuarios u ON p.usuario_id = u.id WHERE p.usuario_id = :uid");
-    $stmt->execute(['uid' => $usuarioId]);
-    $datos = $stmt->fetch();
-    $datos['nombre_completo'] = $datos['nombre'] . ' ' . $datos['apellido'];
-} elseif ($rolId == 3) { // Alumno
-    $stmt = $pdo->prepare("SELECT a.*, u.dni FROM alumnos a INNER JOIN usuarios u ON a.usuario_id = u.id WHERE a.usuario_id = :uid");
-    $stmt->execute(['uid' => $usuarioId]);
-    $datos = $stmt->fetch();
-    $datos['nombre_completo'] = $datos['nombre'] . ' ' . $datos['apellido'];
-}
+// Consultar datos unificados del usuario + legajo (si aplica)
+$stmt = $pdo->prepare("
+    SELECT u.dni, u.apellido, u.nombre, u.email, u.telefono, r.nombre AS rol_nombre, a.legajo
+    FROM usuarios u
+    INNER JOIN roles r ON u.rol_id = r.id
+    LEFT JOIN alumnos a ON a.usuario_id = u.id
+    WHERE u.id = :uid
+");
+$stmt->execute(['uid' => $usuarioId]);
+$usuario = $stmt->fetch();
 
 require_once __DIR__ . '/../includes/header.php';
 require_once __DIR__ . '/../includes/navbar.php';
@@ -48,7 +39,7 @@ require_once __DIR__ . '/../includes/navbar.php';
             <div class="card border-0 shadow-sm">
                 <div class="card-header bg-primary text-white py-3">
                     <h5 class="card-title fw-bold mb-0">
-                        <i class="bi bi-person-badge-fill me-2"></i>Mi Perfil - <?= htmlspecialchars($_SESSION['rol_nombre']) ?>
+                        <i class="bi bi-person-badge-fill me-2"></i>Mi Perfil - <?= htmlspecialchars($usuario['rol_nombre']) ?>
                     </h5>
                 </div>
                 <div class="card-body p-4">
@@ -63,38 +54,35 @@ require_once __DIR__ . '/../includes/navbar.php';
                         <div class="row g-2 mb-3">
                             <div class="col-6">
                                 <label class="form-label small text-muted fw-bold">DNI</label>
-                                <input type="text" class="form-control bg-light" value="<?= htmlspecialchars($datos['dni'] ?? '') ?>" readonly>
+                                <input type="text" class="form-control bg-light" value="<?= htmlspecialchars($usuario['dni']) ?>" readonly>
                             </div>
-                            <?php if ($rolId == 3): ?>
+                            <?php if (!empty($usuario['legajo'])): ?>
                             <div class="col-6">
                                 <label class="form-label small text-muted fw-bold">Legajo</label>
-                                <input type="text" class="form-control bg-light" value="<?= htmlspecialchars($datos['legajo'] ?? '') ?>" readonly>
+                                <input type="text" class="form-control bg-light" value="<?= htmlspecialchars($usuario['legajo']) ?>" readonly>
                             </div>
                             <?php endif; ?>
                         </div>
 
                         <div class="mb-3">
                             <label class="form-label small text-muted fw-bold">Nombre Completo</label>
-                            <input type="text" class="form-control bg-light" value="<?= htmlspecialchars($datos['nombre_completo'] ?? '') ?>" readonly>
+                            <input type="text" class="form-control bg-light" value="<?= htmlspecialchars($usuario['nombre'] . ' ' . $usuario['apellido']) ?>" readonly>
                         </div>
 
-                        <!-- Campos de contacto para Profesor y Alumno -->
-                        <?php if ($rolId == 2 || $rolId == 3): ?>
                         <hr class="my-3">
+
                         <div class="mb-3">
                             <label class="form-label small fw-bold">Correo Electrónico</label>
-                            <input type="email" name="email" class="form-control" value="<?= htmlspecialchars($datos['email'] ?? '') ?>" required>
+                            <input type="email" name="email" class="form-control" value="<?= htmlspecialchars($usuario['email']) ?>" required>
                         </div>
 
                         <div class="mb-3">
                             <label class="form-label small fw-bold">Teléfono de Contacto</label>
-                            <input type="text" name="telefono" class="form-control" value="<?= htmlspecialchars($datos['telefono'] ?? '') ?>">
+                            <input type="text" name="telefono" class="form-control" value="<?= htmlspecialchars($usuario['telefono'] ?? '') ?>">
                         </div>
-                        <?php endif; ?>
 
                         <hr class="my-3">
 
-                        <!-- Cambio de contraseña común para todos los roles -->
                         <div class="mb-4">
                             <label class="form-label small fw-bold">Cambiar Contraseña (Opcional)</label>
                             <input type="password" name="nueva_password" class="form-control" placeholder="Dejar en blanco para conservar la clave actual">

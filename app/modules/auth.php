@@ -7,7 +7,7 @@ require_once __DIR__ . '/../config/database.php';
 
 function login($dni, $password, $pdo) {
     $stmt = $pdo->prepare("
-        SELECT u.id, u.dni, u.password_hash, u.rol_id, r.nombre AS rol_nombre
+        SELECT u.id, u.dni, u.password_hash, u.nombre, u.apellido, u.rol_id, r.nombre AS rol_nombre
         FROM usuarios u
         INNER JOIN roles r ON u.rol_id = r.id
         WHERE u.dni = :dni
@@ -19,37 +19,53 @@ function login($dni, $password, $pdo) {
     if ($user && password_verify($password, $user['password_hash'])) {
         session_regenerate_id(true);
 
-        $_SESSION['user_id']    = (int) $user['id'];
-        $_SESSION['dni']        = $user['dni'];
-        $_SESSION['rol_id']     = (int) $user['rol_id'];
-        $_SESSION['rol_nombre'] = $user['rol_nombre'];
-        $_SESSION['logged_in']  = true;
-        $_SESSION['nombre_comp'] = obtenerNombreUsuario($user['id'], $user['rol_id'], $pdo);
+        $_SESSION['user_id']     = (int) $user['id'];
+        $_SESSION['dni']         = $user['dni'];
+        $_SESSION['rol_id']      = (int) $user['rol_id'];
+        $_SESSION['rol_nombre']  = $user['rol_nombre'];
+        $_SESSION['logged_in']   = true;
+        $_SESSION['nombre_comp'] = trim($user['nombre'] . ' ' . $user['apellido']);
 
         return true;
     }
     return false;
 }
 
-function obtenerNombreUsuario($usuario_id, $rol_id, $pdo) {
-    if ($rol_id == 2) { // Profesor
-        $stmt = $pdo->prepare("SELECT nombre, apellido FROM profesores WHERE usuario_id = :uid");
-        $stmt->execute(['uid' => $usuario_id]);
-        $p = $stmt->fetch();
-        return $p ? $p['nombre'] . ' ' . $p['apellido'] : 'Profesor';
-    } elseif ($rol_id == 3) { // Alumno
-        $stmt = $pdo->prepare("SELECT nombre, apellido FROM alumnos WHERE usuario_id = :uid");
-        $stmt->execute(['uid' => $usuario_id]);
-        $a = $stmt->fetch();
-        return $a ? $a['nombre'] . ' ' . $a['apellido'] : 'Alumno';
-    }
-    return 'Administrador';
-}
-
 function requerirAuth() {
     if (empty($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
         header('Location: login.php');
         exit;
+    }
+}
+
+function actualizarMiPerfil($pdo, $usuarioId, $data) {
+    try {
+        $pdo->beginTransaction();
+
+        // 1. Actualizar datos de contacto en usuarios (válido para Admin, Profesor y Alumno)
+        $stmtU = $pdo->prepare("
+            UPDATE usuarios 
+            SET email = :email, telefono = :telefono 
+            WHERE id = :uid
+        ");
+        $stmtU->execute([
+            'email'    => trim($data['email']),
+            'telefono' => trim($data['telefono'] ?? ''),
+            'uid'      => $usuarioId
+        ]);
+
+        // 2. Si se especificó una nueva contraseña, actualizar el hash
+        if (!empty($data['nueva_password'])) {
+            $passHash = password_hash($data['nueva_password'], PASSWORD_DEFAULT);
+            $stmtP = $pdo->prepare("UPDATE usuarios SET password_hash = :pass WHERE id = :uid");
+            $stmtP->execute(['pass' => $passHash, 'uid' => $usuarioId]);
+        }
+
+        $pdo->commit();
+        return true;
+    } catch (Exception $e) {
+        $pdo->rollBack();
+        return false;
     }
 }
 
@@ -68,42 +84,4 @@ function logout() {
     session_destroy();
     header('Location: login.php');
     exit;
-}
-
-function actualizarMiPerfil($pdo, $usuarioId, $rolId, $data) {
-    try {
-        $pdo->beginTransaction();
-
-        // 1. Si es Profesor, actualiza email y teléfono en la tabla profesores
-        if ($rolId == 2) {
-            $stmt = $pdo->prepare("UPDATE profesores SET email = :email, telefono = :telefono WHERE usuario_id = :uid");
-            $stmt->execute([
-                'email'    => trim($data['email']),
-                'telefono' => trim($data['telefono'] ?? ''),
-                'uid'      => $usuarioId
-            ]);
-        }
-        // 2. Si es Alumno, actualiza email y teléfono en la tabla alumnos
-        elseif ($rolId == 3) {
-            $stmt = $pdo->prepare("UPDATE alumnos SET email = :email, telefono = :telefono WHERE usuario_id = :uid");
-            $stmt->execute([
-                'email'    => trim($data['email']),
-                'telefono' => trim($data['telefono'] ?? ''),
-                'uid'      => $usuarioId
-            ]);
-        }
-
-        // 3. Para cualquier rol (incluido Admin): si ingresó contraseña nueva, la actualiza
-        if (!empty($data['nueva_password'])) {
-            $passHash = password_hash($data['nueva_password'], PASSWORD_DEFAULT);
-            $stmtU = $pdo->prepare("UPDATE usuarios SET password_hash = :pass WHERE id = :uid");
-            $stmtU->execute(['pass' => $passHash, 'uid' => $usuarioId]);
-        }
-
-        $pdo->commit();
-        return true;
-    } catch (Exception $e) {
-        $pdo->rollBack();
-        return false;
-    }
 }

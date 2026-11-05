@@ -1,60 +1,73 @@
 -- =============================================================================
--- DATOS SEMILLA (SEEDS): Sistema de Gestión Académica
+-- DATOS SEMILLA REFACTORIZADOS (v3): Sistema de Gestión Académica
+-- Basado en el esquema Supertipo/Subtipo con datos personales en `usuarios`
+-- Hash bcrypt para clave '12345678': $2y$10$22CharactersSaltHere2u6KHH4hlZwjkWTpmb1HgmN/nGyJB2J32
 -- =============================================================================
 
 USE `gestion_academica`;
 
--- 1. Insertar Roles por Defecto
+SET NAMES utf8mb4;
+SET CHARACTER SET utf8mb4;
+
+SET FOREIGN_KEY_CHECKS = 0;
+
+TRUNCATE TABLE `inscripciones`;
+TRUNCATE TABLE `estados_cursada`;
+TRUNCATE TABLE `curso_profesor`;
+TRUNCATE TABLE `cursos`;
+TRUNCATE TABLE `alumnos`;
+TRUNCATE TABLE `profesores`;
+TRUNCATE TABLE `usuarios`;
+TRUNCATE TABLE `roles`;
+
+SET FOREIGN_KEY_CHECKS = 1;
+
+-- 1. Insertar Roles
 INSERT INTO `roles` (`id`, `nombre`, `descripcion`) VALUES
-(1, 'Administrador', 'Acceso total y gestión completa del sistema'),
-(2, 'Profesor', 'Gestión de sus cursos asignados, listado de alumnos y notas'),
-(3, 'Alumno', 'Consulta de sus cursos e inscripciones activas');
+(1, 'Administrador', 'Acceso total y gestión global del sistema'),
+(2, 'Profesor', 'Gestión de cursos, asistencias y calificaciones'),
+(3, 'Alumno', 'Consulta de inscripciones, materias y notas');
 
--- 2. Insertar Catálogo de Estados de Cursada
-INSERT INTO `estados_cursada` (`id`, `nombre`, `descripcion`) VALUES
-(1, 'Inscripto', 'Alumno matriculado al inicio del período lectivo'),
-(2, 'Regular', 'Alumno que cumplió los requisitos mínimos de cursada'),
-(3, 'Aprobado', 'Alumno con la asignatura acreditada'),
-(4, 'Promocionado', 'Aprobado por promoción directa sin examen final'),
-(5, 'Desaprobado', 'Alumno que no alcanzó la nota mínima de aprobación'),
-(6, 'Libre', 'Alumno dado de baja o que perdió la regularidad');
+-- 2. Insertar Usuarios (Supertipo: Credenciales + Datos Personales)
+INSERT INTO `usuarios` (`id`, `dni`, `apellido`, `nombre`, `email`, `telefono`, `password_hash`, `rol_id`) VALUES
+(1, '11111111', 'Admin', 'Sistema', 'admin@profesorado.edu.ar', '11-1000-0000', '$2y$10$22CharactersSaltHere2u6KHH4hlZwjkWTpmb1HgmN/nGyJB2J32', 1),
+(2, '22222222', 'Gómez', 'Carlos', 'carlos.gomez@profesorado.edu.ar', '11-2000-0000', '$2y$10$22CharactersSaltHere2u6KHH4hlZwjkWTpmb1HgmN/nGyJB2J32', 2),
+(3, '33333333', 'López', 'María', 'maria.lopez@profesorado.edu.ar', '11-3000-0000', '$2y$10$22CharactersSaltHere2u6KHH4hlZwjkWTpmb1HgmN/nGyJB2J32', 2),
+(4, '44444444', 'Pérez', 'Juan', 'juan.perez@alumnos.edu.ar', '11-4000-0000', '$2y$10$22CharactersSaltHere2u6KHH4hlZwjkWTpmb1HgmN/nGyJB2J32', 3),
+(5, '55555555', 'Fernández', 'Ana', 'ana.fernandez@alumnos.edu.ar', '11-5000-0000', '$2y$10$22CharactersSaltHere2u6KHH4hlZwjkWTpmb1HgmN/nGyJB2J32', 3),
+(6, '66666666', 'Martínez', 'Lucas', 'lucas.martinez@alumnos.edu.ar', '11-6000-0000', '$2y$10$22CharactersSaltHere2u6KHH4hlZwjkWTpmb1HgmN/nGyJB2J32', 3);
 
--- 3. Insertar Usuarios de Prueba (Password por defecto para todos: '12345678')
--- Hash de Bcrypt equivalente para la contraseña '12345678'
-INSERT INTO `usuarios` (`id`, `dni`, `password_hash`, `rol_id`) VALUES
-(1, '11111111', '$2y$10$22CharactersSaltHere2u6KHH4hlZwjkWTpmb1HgmN/nGyJB2J32', 1), -- Admin
-(2, '22222222', '$2y$10$22CharactersSaltHere2u6KHH4hlZwjkWTpmb1HgmN/nGyJB2J32', 2), -- Prof. Gómez
-(3, '33333333', '$2y$10$22CharactersSaltHere2u6KHH4hlZwjkWTpmb1HgmN/nGyJB2J32', 2), -- Prof. Martínez
-(4, '44444444', '$2y$10$22CharactersSaltHere2u6KHH4hlZwjkWTpmb1HgmN/nGyJB2J32', 3), -- Alumno Pérez
-(5, '55555555', '$2y$10$22CharactersSaltHere2u6KHH4hlZwjkWTpmb1HgmN/nGyJB2J32', 3), -- Alumno Rodríguez
-(6, '66666666', '$2y$10$22CharactersSaltHere2u6KHH4hlZwjkWTpmb1HgmN/nGyJB2J32', 3); -- Alumna López
+-- 3. Insertar Profesores (Subtipo)
+INSERT INTO `profesores` (`id`, `usuario_id`) VALUES
+(1, 2),
+(2, 3);
 
--- 4. Insertar Profesores
-INSERT INTO `profesores` (`id`, `usuario_id`, `apellido`, `nombre`, `email`, `telefono`) VALUES
-(1, 2, 'Gómez', 'Carlos Alberto', 'carlos.gomez@profesorado.edu.ar', '11-4567-8901'),
-(2, 3, 'Martínez', 'Laura Sofía', 'laura.martinez@profesorado.edu.ar', '11-5678-9012');
+-- 4. Insertar Alumnos (Subtipo)
+INSERT INTO `alumnos` (`id`, `usuario_id`, `legajo`, `estado`) VALUES
+(1, 4, 'LEG-2026-001', 'Activo'),
+(2, 5, 'LEG-2026-002', 'Activo'),
+(3, 6, 'LEG-2026-003', 'Activo');
 
--- 5. Insertar Alumnos
-INSERT INTO `alumnos` (`id`, `usuario_id`, `legajo`, `apellido`, `nombre`, `email`, `telefono`, `estado`) VALUES
-(1, 4, 'LEG-2024-001', 'Pérez', 'Juan Manuel', 'juan.perez@alumnos.edu.ar', '11-2345-6789', 'Activo'),
-(2, 5, 'LEG-2024-002', 'Rodríguez', 'María Belén', 'maria.rodriguez@alumnos.edu.ar', '11-3456-7890', 'Activo'),
-(3, 6, 'LEG-2024-003', 'López', 'Lucas Agustín', 'lucas.lopez@alumnos.edu.ar', '11-6789-0123', 'Activo');
-
--- 6. Insertar Cursos
+-- 5. Insertar Cursos
 INSERT INTO `cursos` (`id`, `nombre`, `materia`, `periodo_lectivo`) VALUES
-(1, 'PW2-2026-1C', 'Programación Web II', '2026 - 1er Cuatrimestre'),
-(2, 'BD1-2026-1C', 'Bases de Datos I', '2026 - 1er Cuatrimestre'),
-(3, 'SO-2026-2C', 'Sistemas Operativos', '2026 - 2do Cuatrimestre');
+(1, 'Programación Web II - Comisión A', 'Programación Web II', '2026 - 2do Cuatrimestre'),
+(2, 'Bases de Datos - Comisión B', 'Bases de Datos', '2026 - 2do Cuatrimestre');
 
--- 7. Asignar Profesores a Cursos (Demostración de relación M:N)
+-- 6. Asignar Profesores a Cursos
 INSERT INTO `curso_profesor` (`curso_id`, `profesor_id`) VALUES
-(1, 1), -- Gómez dicta PW2
-(2, 1), -- Gómez también dicta BD1 (Un profesor en varios cursos)
-(2, 2); -- Martínez co-dicta BD1
+(1, 1),
+(2, 2);
 
--- 8. Inscripciones de Alumnos en Cursos
-INSERT INTO `inscripciones` (`curso_id`, `alumno_id`, `estado_cursada_id`, `nota_final`) VALUES
-(1, 1, 1, NULL), -- Juan Pérez en PW2 (Inscripto)
-(1, 2, 4, 9.50), -- María Rodríguez en PW2 (Promocionado)
-(2, 1, 2, 7.00), -- Juan Pérez en BD1 (Regular)
-(2, 3, 1, NULL); -- Lucas López en BD1 (Inscripto)
+-- 7. Insertar Estados de Cursada
+INSERT INTO `estados_cursada` (`id`, `nombre`, `descripcion`) VALUES
+(1, 'Cursando', 'Alumno regular cursando activamente la asignatura'),
+(2, 'Aprobado', 'Materia promocionada o aprobada en examen final'),
+(3, 'Desaprobado', 'No alcanzó la calificación mínima requerida'),
+(4, 'Libre', 'Perdió la regularidad por inasistencias o aplazamiento');
+
+-- 8. Insertar Inscripciones
+INSERT INTO `inscripciones` (`id`, `curso_id`, `alumno_id`, `estado_cursada_id`, `nota_final`) VALUES
+(1, 1, 1, 1, NULL),
+(2, 1, 2, 1, NULL),
+(3, 2, 1, 2, 8.50),
+(4, 2, 3, 1, NULL);
