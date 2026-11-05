@@ -2,7 +2,6 @@
 
 **Asignatura:** Programación Web II / Profesorado de Informática  
 **Proyecto:** Sistema de Gestión Académica Mobile-First  
-**Criterio de Evaluación Target:** 10/10 (Rigor Metodológico, 3FN, Seguridad y Mobile-First)
 
 ---
 
