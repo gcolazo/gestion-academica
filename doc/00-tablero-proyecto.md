@@ -95,13 +95,3 @@
 - [ ] **Reportes e Historia Académica**: Exportación y consulta de historial académico del estudiante.
 
 ---
-
-## 📊 Matriz de Cumplimiento vs. Rúbrica de Evaluación
-
-| Criterio de Evaluación | Requisito del Profesor | Estado en el Proyecto | Calificación Estimada |
-| :--- | :--- | :--- | :---: |
-| **Base de Datos & Normalización** | Demostrar 3FN, estructura limpia y relaciones sin redundancias. | **Cumplido al 100%**: Modelo Supertipo/Subtipo (`usuarios` + `alumnos`/`profesores`), `utf8mb4`, FKs con `CASCADE`/`RESTRICT`. | **10 / 10** |
-| **Seguridad** | Hashing de contraseñas, control de acceso y prevención de inyecciones. | **Cumplido al 100%**: `bcrypt`, PDO preparado estricto, sanitización XSS, control RBAC por sesión. | **10 / 10** |
-| **Diseño UI / UX & Búsqueda** | Enfoque Mobile-First, responsivo, funcional con buscador multicriterio. | **Cumplido al 100%**: Bootstrap 5 local, tablas que se transforman en cards, modales aislados y búsqueda unificada. | **10 / 10** |
-| **Infraestructura** | Uso de contenedores Docker y código limpio. | **Cumplido al 100%**: Docker Compose con PHP 8.4 + MySQL 8.4 y scripts `.sql` automatizados. | **10 / 10** |
-| **Documentación** | Explicación clara en `.md` con diagramas y trazabilidad. | **Cumplido al 100%**: `README.md`, `01-modelo-datos.md`, `02-seguridad.md`, `03-alumnos.md` y `00-tablero-proyecto.md`. | **10 / 10** |
