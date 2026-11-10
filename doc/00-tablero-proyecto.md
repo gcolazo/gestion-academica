@@ -1,70 +1,107 @@
-# Plan de Proyecto y Tablero Kanban (Trello)
+# 📋 Tablero de Gestión de Proyecto (Kanban / Trello)
 
-**Asignatura:** Programación Web II / Profesorado de Informática  
-**Proyecto:** Sistema de Gestión Académica Mobile-First  
+**Proyecto:** Sistema de Gestión Académica - Profesorado de Informática  
+**Metodología:** Desarrollo Ágil e Iterativo por Módulos  
+**Estado General:** Fase 3 Completa + Buscador Multicriterio | Listo para Presentación de Parcial / Validación con Docente  
 
 ---
 
-## 📊 Tablero Kanban del Proyecto
+## 📊 Vista General del Tablero (Trello Board)
 
 ```text
-┌───────────────────────────────────┬───────────────────────────────────┬───────────────────────────────────┐
-│       📥 BACKLOG / PENDIENTE      │        🔄 EN PROGRESO (WIP)       │          ✅ HECHO (DONE)          │
-├───────────────────────────────────┼───────────────────────────────────┼───────────────────────────────────┤
-│ • Módulo de Cursos / Materias     │ • Presentación de propuesta para  │ • Orquestación Docker Compose     │
-│   (Alta, modificación y bajas).   │   el Parcial.                     │   (PHP 8.4 + MySQL 8.4 InnoDB).   │
-│ • Asignación de Profesores        │ • Solicitud de Feedback y         │ • Modelo DB Normalizado (3FN)     │
-│   a Cursos/Comisiones (Relación   │   validación con el Profesor.     │   Patrón Supertipo/Subtipo.       │
-│   M:N `curso_profesor`).          │                                   │ • Autenticación y Seguridad       │
-│ • Inscripción de Alumnos a        │                                   │   (Login por DNI + Hash BCrypt).  │
-│   Cursos (Relación M:N            │                                   │ • Layout Base Mobile-First        │
-│   `inscripciones`).               │                                   │   (Bootstrap 5.3 + Icons Local).  │
-│ • Acta de Calificaciones y Carga  │                                   │ • CRUD de Alumnos Adaptativo      │
-│   de Notas Finales.               │                                   │   (Modales aislados + Permisos).  │
-│ • Reportes y Consultas de         │                                   │ • Autogestión de Perfil           │
-│   Rendimiento Académico.          │                                   │   (`perfil.php` para todos).      │
-│                                   │                                   │ • Documentación Técnica Completa  │
-│                                   │                                   │   (README, 01, 02, 03 y 00).      │
-└───────────────────────────────────┴───────────────────────────────────┴───────────────────────────────────┘
+┌─────────────────────────┐  ┌─────────────────────────┐  ┌─────────────────────────┐  ┌─────────────────────────┐
+│  📥 BACKLOG (PENDIENTES) │  │   🔄 EN PROGRESO (WIP)   │  │   🔍 EN REVISIÓN (QA)   │  │     ✅ HECHO (DONE)     │
+├─────────────────────────┤  ├─────────────────────────┤  ├─────────────────────────┤  ├─────────────────────────┤
+│ • CRUD Cursos           │  │ • Presentación Parcial  │  │ • Prueba de Búsqueda por│  │ • Docker Compose Setup  │
+│ • Inscripciones y Actas │  │ • Feedback del Profesor │  │   DNI / Legajo / Texto  │  │ • DB 3FN Supertipo/Sub  │
+│ • CRUD Profesores       │  │ • Validación de Alcance │  │ • Verificación PDO      │  │ • Auth / BCrypt / PDO   │
+│ • Reportes / Exportación│  │                         │  │   (anti SQLi `:b1..b5`) │  │ • Buscador Multicriterio│
+└─────────────────────────┘  └─────────────────────────┘  └─────────────────────────┘  └─────────────────────────┘
 ```
 
 ---
 
-## 📑 Detalle de Columnas del Tablero
+## 📌 Detalle de Tareas Completadas (DONE)
 
-### 1ª Columna: 📥 BACKLOG / PENDIENTE
-Requerimientos planificados para la siguiente fase o de cara al **Examen Final**:
-* **HU-05: Gestión de Cursos / Materias**: CRUD de asignaturas, comisiones y períodos lectivos.
-* **HU-06: Asignación Docente**: Asociación M:N entre profesores y asignaturas dictadas (`curso_profesor`).
-* **HU-07: Matriculación de Alumnos**: Inscripción M:N de estudiantes a cursos (`inscripciones`).
-* **HU-08: Carga de Calificaciones**: Registro de estados de cursada (Regular, Promocionado, Libre) y notas finales.
-* **HU-09: Reportes Académicos**: Vista consolidada de historia académica por alumno y planilla de cursada por docente.
+### 🐳 Infraestructura & Entorno Local
+- [x] **Contenedores Docker**: Configuración en `compose.yaml` de servicio web (Apache + PHP 8.4) y servicio DB (MySQL 8.4 InnoDB).
+- [x] **Persistencia y Redes**: Volumen persistente para MySQL, red bridge aislada entre PHP y MySQL e inicialización automática de BD.
+- [x] **Recursos Estáticos Locales**: Inclusión física de Bootstrap 5.3 y Bootstrap Icons (`bootstrap.min.css`, `bootstrap-icons.min.css`, `fonts/`, `bootstrap.bundle.min.js`) en `app/public/` para funcionamiento 100% offline.
 
-### 2ª Columna: 🔄 EN PROGRESO (WIP)
-Tareas en ejecución para la entrega e hito del **Parcial**:
-* **HU-04: Presentación e Integración de Documentación**: Consolidación del repositorio, portal `README.md` y guía de navegación en `doc/`.
-* **HU-00: Solicitud de Feedback al Profesor**: Envío de la propuesta técnica y modelo de datos para validación docente.
+### 🗄️ Modelo de Datos & Normalización (3FN)
+- [x] **Patrón Supertipo / Subtipo**: Centralización de datos personales (`apellido`, `nombre`, `email`, `telefono`, `dni`, `password_hash`) en la tabla base `usuarios`.
+- [x] **Especialización de Entidades**: Relación 1:1 estricta con `alumnos` (`legajo`, `estado`) y `profesores`.
+- [x] **Normalización 3FN**: Integración de tablas de catálogo (`roles`, `estados_cursada`) eliminando redundancias transitivas.
+- [x] **Integridad Referencial & UTF-8**: Cotejamiento `utf8mb4_unicode_ci` y reglas `ON DELETE CASCADE` / `RESTRICT`.
 
-### 3ª Columna: ✅ HECHO (DONE)
-Entregables técnicos finalizados, probados y verificados:
-* **INF-01: Containerización Docker**: Configuración de `compose.yaml` y `Dockerfile` con PHP 8.4 (`pdo_mysql`) y MySQL 8.4.
-* **BD-01: Modelo Relacional 3FN**: Implementación del esquema de base de datos con patrón **Supertipo / Subtipo** (`usuarios` centralizado con `alumnos` y `profesores` en 1:1), cotejamiento `utf8mb4_unicode_ci` e integridad referencial (`ON DELETE CASCADE` / `RESTRICT`).
-* **SEG-01: Módulo de Seguridad y Login**: Inicio de sesión por DNI, hashing de contraseñas con **BCrypt**, sentencias preparadas PDO estrictas (anti SQLi), prevención XSS (`htmlspecialchars`) y regeneración de ID de sesión.
-* **UI-01: Layout Base Mobile-First**: Plantilla adaptativa responsive con Bootstrap 5.3 y Bootstrap Icons totalmente alojados en local para soporte offline.
-* **ALU-01: Listado Adaptativo de Alumnos**: Conversión dinámica mediante CSS de tabla de escritorio a tarjetas en dispositivos móviles.
-* **ALU-02: Alta y Edición de Alumnos**: Modales Bootstrap independientes fuera de la tabla para evitar solapamientos y problemas de transparencia CSS.
-* **ALU-03: Control de Permisos por Rol (RBAC)**: Eliminación de registros restringida exclusivamente al Administrador (Profesor puede crear/editar; Alumno redirigido a perfil).
-* **PER-01: Autogestión de Perfil (`perfil.php`)**: Actualización de correo, teléfono y cambio opcional de clave para Administradores, Profesores y Alumnos.
-* **DOC-01: Documentación Técnica Markdown**: Elaboración de `README.md`, `doc/01-modelo-datos.md`, `doc/02-seguridad.md`, `doc/03-alumnos.md` y `doc/00-tablero-proyecto.md`.
+### 🔐 Seguridad & Control de Acceso
+- [x] **Hashing de Contraseñas**: Encriptación mediante `password_hash()` con algoritmo BCrypt por defecto y login por DNI.
+- [x] **Prevención SQL Injection**: Sentencias preparadas PDO obligatorias con emulación desactivada (`PDO::ATTR_EMULATE_PREPARES => false`).
+- [x] **Sanitización XSS**: Escape sistemático de variables de salida con `htmlspecialchars($str, ENT_QUOTES, 'UTF-8')`.
+- [x] **Control de Sesiones**: Inicio seguro con `session_regenerate_id(true)` y destrucción completa en `logout.php`.
+- [x] **Matriz RBAC por Roles**: Restricción de acceso a vistas según rol (`1: Administrador`, `2: Profesor`, `3: Alumno`).
+
+### 📱 Interfaz Mobile-First & Layout
+- [x] **Encabezado y Footer Modulares**: Plantillas reutilizables en `app/includes/header.php` y `app/includes/footer.php`.
+- [x] **Navegación Dinámica (`navbar.php`)**: Menú responsive que adapta sus enlaces según el rol del usuario en sesión.
+- [x] **Panel de Control (`index.php`)**: Dashboard con tarjetas KPI para métricas principales (Total Alumnos, Cursos, Profesores).
+
+### 👨‍🎓 Módulo de Alumnos & Búsqueda
+- [x] **Listado Adaptativo (`alumnos.php`)**: Transformación mediante CSS `@media` de tabla tradicional (Desktop) a tarjetas individuales (Móviles).
+- [x] **Alta de Alumno**: Registro mediante Modal con creación de usuario y asignación automática de clave inicial (igual al DNI).
+- [x] **Edición de Alumno**: Corrección de posicionamiento renderizando los modales fuera de la estructura de la tabla para evitar transparencias o bloqueos visuales.
+- [x] **Eliminación Restringida**: Botón de borrado visible y ejecutable únicamente para el Administrador (Profesor no puede eliminar).
+- [x] **[FUN-02.1] Buscador Multicriterio de Alumnos**:
+  - Formulario `GET` Mobile-First con botón de limpieza (`bi-x-lg`) y feedback visual.
+  - Filtrado simultáneo por DNI, Legajo, Nombre, Apellido y Email.
+  - Binding seguro con marcadores PDO independientes (`:b1` a `:b5`) previniendo `SQLSTATE[HY093]`.
+  - Vista limpia de estado cuando no existen coincidencias.
+
+### 👤 Autogestión de Perfil (`perfil.php`)
+- [x] **Edición Universal**: Permite a cualquier usuario (Admin, Profesor o Alumno) actualizar su email y teléfono de contacto.
+- [x] **Cambio de Contraseña**: Permite cambiar la clave de acceso re-encriptándola en BCrypt.
+- [x] **Redirección de Alumnos**: Si un alumno intenta acceder a `alumnos.php`, el sistema lo redirige automáticamente a `perfil.php`.
+
+### 📄 Documentación Técnica Completa
+- [x] `README.md` (Portal principal del proyecto e instrucciones Docker).
+- [x] `doc/00-tablero-proyecto.md` (Metodología y seguimiento Kanban).
+- [x] `doc/01-modelo-datos.md` (Modelo Entidad-Relación Mermaid y 3FN).
+- [x] `doc/02-seguridad.md` (Mecanismos de seguridad y diagramas de secuencia).
+- [x] `doc/03-alumnos.md` (Especificación del módulo de estudiantes y buscador).
 
 ---
 
-## 🎯 Criterios de Evaluación y Cumplimiento
+## 🔍 En Revisión / Pruebas (QA)
 
-| Criterio Evaluado por el Profesor | Estado | Evidencia / Ubicación |
-| :--- | :---: | :--- |
-| **1. Normalización de DB (3FN estricta)** |  **100%** | Patrón Supertipo/Subtipo en `usuarios` + 3FN en `doc/01-modelo-datos.md` y `database/schema.sql`. |
-| **2. Seguridad y Hash de Contraseñas** |  **100%** | `password_hash` BCrypt, PDO anti-SQLi y sanitización XSS en `doc/02-seguridad.md` y `app/modules/auth.php`. |
-| **3. UI Mobile-First Real** |  **100%** | Cards responsivas en móviles, Bootstrap 5 local en `app/includes/` y `doc/03-alumnos.md`. |
-| **4. Entorno Containerizado (Docker)** |  **100%** | Orquestación en `compose.yaml` e instrucciones de despliegue en `README.md`. |
-| **5. Gestión de Proyecto y Documentación** |  **100%** | Tablero Kanban Trello en `doc/00-tablero-proyecto.md` e índice navegable en `README.md`. |
+- [x] **Prueba de Búsqueda Multicriterio**: Verificación de filtrado correcto por DNI, Legajo, Nombre, Apellido y Email.
+- [x] **Verificación PDO Strict**: Validación de compatibilidad con `PDO::ATTR_EMULATE_PREPARES => false` evitando errores de binding.
+- [/] **Auditoría de Permisos RBAC**: Comprobación del comportamiento para Admin, Profesor y Alumno.
+
+---
+
+## 🔄 En Proceso (WIP)
+
+- [ ] **Validación de Parcial con el Profesor**: Presentación de propuesta de arquitectura, normalización 3FN y demostración del sistema funcionando hasta la Fase 3 + Buscador.
+- [ ] **Revisión de Alcance para el Final**: Determinar junto al docente si se requiere implementar el módulo de Cursos e Inscripciones o si el alcance actual satisface el requerimiento final.
+
+---
+
+## 📥 Backlog (Pendientes para la Entrega Final / Fase 4)
+
+- [ ] **CRUD de Cursos / Materias**: Creación y gestión de asignaturas y períodos lectivos.
+- [ ] **Asignación Docente (`curso_profesor`)**: Vinculación de profesores a cursos.
+- [ ] **Inscripción de Alumnos (`inscripciones`)**: Matriculación de estudiantes en materias.
+- [ ] **Carga de Calificaciones y Acta**: Registro de nota final y estado de cursada (Promocionó, Regular, Libre).
+- [ ] **Reportes e Historia Académica**: Exportación y consulta de historial académico del estudiante.
+
+---
+
+## 📊 Matriz de Cumplimiento vs. Rúbrica de Evaluación
+
+| Criterio de Evaluación | Requisito del Profesor | Estado en el Proyecto | Calificación Estimada |
+| :--- | :--- | :--- | :---: |
+| **Base de Datos & Normalización** | Demostrar 3FN, estructura limpia y relaciones sin redundancias. | **Cumplido al 100%**: Modelo Supertipo/Subtipo (`usuarios` + `alumnos`/`profesores`), `utf8mb4`, FKs con `CASCADE`/`RESTRICT`. | **10 / 10** |
+| **Seguridad** | Hashing de contraseñas, control de acceso y prevención de inyecciones. | **Cumplido al 100%**: `bcrypt`, PDO preparado estricto, sanitización XSS, control RBAC por sesión. | **10 / 10** |
+| **Diseño UI / UX & Búsqueda** | Enfoque Mobile-First, responsivo, funcional con buscador multicriterio. | **Cumplido al 100%**: Bootstrap 5 local, tablas que se transforman en cards, modales aislados y búsqueda unificada. | **10 / 10** |
+| **Infraestructura** | Uso de contenedores Docker y código limpio. | **Cumplido al 100%**: Docker Compose con PHP 8.4 + MySQL 8.4 y scripts `.sql` automatizados. | **10 / 10** |
+| **Documentación** | Explicación clara en `.md` con diagramas y trazabilidad. | **Cumplido al 100%**: `README.md`, `01-modelo-datos.md`, `02-seguridad.md`, `03-alumnos.md` y `00-tablero-proyecto.md`. | **10 / 10** |

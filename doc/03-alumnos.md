@@ -1,43 +1,117 @@
-# 03. Módulo de Gestión de Alumnos y Autogestión de Perfil
+# Especificación del Módulo de Alumnos (Versión 3 - Buscador Multicriterio Integrado)
 
-## 📱 Alcance Funcional y Diseño Mobile-First
-
-El módulo de alumnos brinda una solución integral para la matriculación y administración de estudiantes, optimizada tanto para computadoras de escritorio como para dispositivos móviles mediante **Bootstrap 5**:
-
-1. **Vistas Adaptativas (Mobile-First)**:
-   * En pantallas grandes, presenta una tabla tradicional interactiva.
-   * En pantallas pequeñas (< 768px), las filas se transforman dinámicamente en **tarjetas verticales (Cards)** mediante la clase CSS `.table-responsive-cards` y atributos `data-label`.
-2. **Corrección de Renderizado de Modales**:
-   * Los formularios de edición e inserción emergentes (`<div class="modal fade">`) se ubican al final del documento HTML, fuera de las etiquetas `<table>` y `.card-body`, garantizando fondos sólidos opacos y una interacción de formularios fluida sin solapamientos.
+**Asignatura**: Programación Web II  
+**Proyecto**: Sistema de Gestión Académica para Profesorado en Informática  
 
 ---
 
-## ⚙️ Operaciones Atómicas con Transacciones PDO
+## 1. Matriz de Permisos
 
-Dado que la información del alumno reside de forma distribuida entre la tabla de identidad (`usuarios`) y la tabla de especialización (`alumnos`), todas las operaciones de alta y modificación utilizan **Transacciones PDO** (`beginTransaction()`, `commit()`, `rollBack()`).
-
-### 1. Alta de Alumno (`crearAlumno`)
-1. Genera el registro de usuario en `usuarios` guardando `dni`, `apellido`, `nombre`, `email`, `telefono`, asignando `rol_id = 3` y la contraseña inicial (igual al DNI encriptada con bcrypt).
-2. Obtiene el ID generado (`$pdo->lastInsertId()`).
-3. Inserta el registro en `alumnos` con el `legajo`, `estado` y el `usuario_id` vinculado.
-4. En caso de duplicidad de DNI, Legajo o Email, la transacción realiza un `rollBack()` informando el error al usuario.
-
-### 2. Edición de Alumno (`actualizarAlumno`)
-1. Actualiza `dni`, `apellido`, `nombre`, `email` y `telefono` en la tabla `usuarios`.
-2. Actualiza `legajo` y `estado` en la tabla `alumnos`.
-3. Confirma los cambios mediante `commit()`.
-
-### 3. Eliminación con Restricción de Rol (`eliminarAlumno`)
-* **Seguridad de Servidor**: La función verifica que `$_SESSION['rol_id'] == 1` (Administrador).
-* Si un Profesor intenta enviar una petición de borrado, la función retorna `false` y aborta la acción.
-* Al ejecutar el `DELETE FROM usuarios WHERE id = ...`, la base de datos elimina automáticamente la fila correspondiente en `alumnos` por la regla **`ON DELETE CASCADE`**.
+| Rol | Crear Alumno | Editar Alumno | Eliminar Alumno | Ver Listado / Buscar | Editar Su Propio Perfil |
+| :--- | :---: | :---: | :---: | :---: | :---: |
+| **Administrador** |  Sí |  Sí |  Sí |  Sí |  Sí |
+| **Profesor** |  Sí |  Sí | ❌ No |  Sí |  Sí |
+| **Alumno** | ❌ No | ❌ No (de otros) | ❌ No | ❌ No (Redirige) |  Sí (Mis Datos) |
 
 ---
 
-## 👤 Autogestión de Perfil de Alumno (`perfil.php`)
+## 2. Buscador Multicriterio de Alumnos (Novedad)
 
-Para promover la autonomía del estudiante y la actualización de sus datos de contacto:
+### A. Descripción Funcional
+Se integra un **Buscador Unificado Mobile-First** en la cabecera de `app/public/alumnos.php`. En lugar de requerir que el usuario seleccione el criterio de búsqueda (DNI, legajo, etc.) mediante menús desplegables, la barra acepta cualquier término y evalúa simultáneamente:
+* **DNI**: Búsqueda por documento (coincidencia parcial o exacta).
+* **Legajo**: Búsqueda por código de legajo estudiantil.
+* **Nombre / Apellido**: Búsqueda por coincidencia parcial de texto.
+* **Email**: Búsqueda por correo de contacto.
 
-* **Acceso Directo**: Cuando un alumno (Rol 3) inicia sesión o intenta acceder al listado general `alumnos.php`, es redirigido automáticamente a `perfil.php`.
-* **Modificación de Contacto**: El alumno puede actualizar de forma independiente su `email` y `telefono`.
-* **Cambio Voluntario de Contraseña**: Permite ingresar una clave nueva para reemplazar su contraseña inicial por defecto. Si el campo se deja en blanco, la clave previa se conserva sin cambios.
+### B. Implementación Técnica y Seguridad PDO
+Para garantizar la prevención estricta de Inyecciones SQL con las sentencias preparadas nativas de MySQL (`PDO::ATTR_EMULATE_PREPARES => false`), la función `obtenerAlumnos()` asigna marcadores de parámetros individuales (`:b1` a `:b5`) en lugar de reutilizar una misma etiqueta. Esto evita el error de PDO `SQLSTATE[HY093]: Invalid parameter number`.
+
+```php
+function obtenerAlumnos($pdo, $busqueda = '') {
+    $sql = "
+        SELECT a.id, a.usuario_id, a.legajo, a.estado,
+               u.dni, u.apellido, u.nombre, u.email, u.telefono
+        FROM alumnos a
+        INNER JOIN usuarios u ON a.usuario_id = u.id
+    ";
+
+    $params = [];
+    if (!empty(trim($busqueda))) {
+        $term = '%' . trim($busqueda) . '%';
+        $sql .= " WHERE u.dni LIKE :b1 
+                     OR u.nombre LIKE :b2 
+                     OR u.apellido LIKE :b3 
+                     OR a.legajo LIKE :b4 
+                     OR u.email LIKE :b5";
+        
+        $params = [
+            'b1' => $term,
+            'b2' => $term,
+            'b3' => $term,
+            'b4' => $term,
+            'b5' => $term
+        ];
+    }
+
+    $sql .= " ORDER BY u.apellido ASC, u.nombre ASC";
+
+    $stmt = $pdo->prepare($sql);
+    $stmt->execute($params);
+    return $stmt->fetchAll();
+}
+```
+
+### C. Componente UI Mobile-First
+El formulario de búsqueda utiliza el método `GET` para conservar el parámetro `?q=` en la URL al recargar o compartir la vista. Incluye un botón dinámico de limpieza (`bi-x-lg`) que aparece únicamente cuando hay un filtro activo.
+
+```html
+<!-- Formulario de Búsqueda -->
+<form action="alumnos.php" method="GET" class="row g-2 mb-3">
+    <div class="col">
+        <div class="input-group">
+            <span class="input-group-text bg-white border-end-0">
+                <i class="bi bi-search text-muted"></i>
+            </span>
+            <input type="search" name="q" class="form-control border-start-0 ps-0" 
+                   placeholder="Buscar por DNI, Legajo, Nombre o Apellido..." 
+                   value="<?= htmlspecialchars($busqueda) ?>">
+        </div>
+    </div>
+    <div class="col-auto">
+        <button type="submit" class="btn btn-outline-primary">Buscar</button>
+        <?php if (!empty($busqueda)): ?>
+            <a href="alumnos.php" class="btn btn-outline-secondary" title="Limpiar filtro">
+                <i class="bi bi-x-lg"></i>
+            </a>
+        <?php endif; ?>
+    </div>
+</form>
+```
+
+---
+
+## 3. Flujo Funcional por Rol
+
+### A. Administrador (Control Total)
+* **Alta de Alumnos**: Crea registro de `usuarios` + `alumnos`.
+* **Edición Integral**: Modifica legajo, DNI, nombre, apellido, email, teléfono y estado en modales aislados.
+* **Baja Física**: Eliminación en cascada (`DELETE FROM usuarios WHERE id = ...`).
+* **Búsqueda**: Filtra la nómina completa por cualquier atributo.
+
+### B. Profesor (Gestión Académica)
+* **Alta y Edición**: Registro y corrección de datos de estudiantes.
+* **Sin Permiso de Borrado**: Botón oculto y acción restringida en backend.
+* **Búsqueda**: Localiza rápidamente estudiantes por DNI o apellido.
+
+### C. Alumno (Autogestión de Perfil)
+* **Acceso Restringido**: Redirección automática a `perfil.php`.
+* **Vista Perfil**: Formulario exclusivo para consultar datos y actualizar contraseña, email y teléfono.
+
+---
+
+## 4. Estructura de Páginas PHP
+
+1. **`app/modules/alumnos.php`**: Lógica de consulta relacional y binding seguro de parámetros PDO (`obtenerAlumnos`, `crearAlumno`, `actualizarAlumno`, `eliminarAlumno`).
+2. **`app/public/alumnos.php`**: Interfaz ABM con buscador integrado y modales aislados para prevenir bloqueos CSS.
+3. **`app/public/perfil.php`**: Vista adaptativa de autogestión de cuenta.

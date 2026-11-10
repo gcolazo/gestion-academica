@@ -46,7 +46,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-$alumnos = obtenerAlumnos($pdo);
+// Capturar el término de búsqueda
+$busqueda = $_GET['q'] ?? '';
+$alumnos  = obtenerAlumnos($pdo, $busqueda);
 
 require_once __DIR__ . '/../includes/header.php';
 require_once __DIR__ . '/../includes/navbar.php';
@@ -71,66 +73,89 @@ require_once __DIR__ . '/../includes/navbar.php';
         </div>
     <?php endif; ?>
 
+    <!-- Barra de Búsqueda Mobile-First -->
+    <form action="alumnos.php" method="GET" class="row g-2 mb-3">
+        <div class="col">
+            <div class="input-group">
+                <span class="input-group-text bg-white border-end-0">
+                    <i class="bi bi-search text-muted"></i>
+                </span>
+                <input type="search" name="q" class="form-control border-start-0 ps-0" 
+                       placeholder="Buscar por DNI, Legajo, Nombre o Apellido..." 
+                       value="<?= htmlspecialchars($busqueda) ?>">
+            </div>
+        </div>
+        <div class="col-auto">
+            <button type="submit" class="btn btn-outline-primary">Buscar</button>
+            <?php if (!empty($busqueda)): ?>
+                <a href="alumnos.php" class="btn btn-outline-secondary" title="Limpiar filtro">
+                    <i class="bi bi-x-lg"></i>
+                </a>
+            <?php endif; ?>
+        </div>
+    </form>
+
     <!-- Tabla Principal de Alumnos -->
     <div class="card border-0 shadow-sm">
         <div class="card-body p-0">
-            <table class="table table-hover align-middle mb-0 table-responsive-cards">
-                <thead class="table-light">
-                    <tr>
-                        <th>Legajo</th>
-                        <th>DNI</th>
-                        <th>Nombre Completo</th>
-                        <th>Email</th>
-                        <th>Teléfono</th>
-                        <th>Estado</th>
-                        <th class="text-end">Acciones</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <?php foreach ($alumnos as $al): ?>
-                    <tr>
-                        <td data-label="Legajo"><span class="fw-bold text-primary"><?= htmlspecialchars($al['legajo']) ?></span></td>
-                        <td data-label="DNI"><?= htmlspecialchars($al['dni']) ?></td>
-                        <td data-label="Nombre"><?= htmlspecialchars($al['apellido'] . ', ' . $al['nombre']) ?></td>
-                        <td data-label="Email"><?= htmlspecialchars($al['email']) ?></td>
-                        <td data-label="Teléfono"><?= htmlspecialchars($al['telefono'] ?? '-') ?></td>
-                        <td data-label="Estado">
-                            <span class="badge bg-<?= $al['estado'] === 'Activo' ? 'success' : 'secondary' ?>">
-                                <?= $al['estado'] ?>
-                            </span>
-                        </td>
-                        <td data-label="Acciones" class="text-end">
-                            <!-- Botón Editar (Llama al modal ubicado fuera de la tabla) -->
-                            <button class="btn btn-outline-primary btn-sm me-1" 
-                                    data-bs-toggle="modal" 
-                                    data-bs-target="#modalEditarAlumno_<?= $al['id'] ?>">
-                                <i class="bi bi-pencil-fill"></i>
-                            </button>
-
-                            <!-- SOLO el Administrador puede Eliminar -->
-                            <?php if ($rolId == 1): ?>
-                            <form action="alumnos.php" method="POST" class="d-inline" onsubmit="return confirm('¿Confirma eliminar definitivamente a este alumno?');">
-                                <input type="hidden" name="accion" value="eliminar">
-                                <input type="hidden" name="id" value="<?= $al['id'] ?>">
-                                <button type="submit" class="btn btn-outline-danger btn-sm">
-                                    <i class="bi bi-trash-fill"></i>
+            <?php if (empty($alumnos)): ?>
+                <div class="p-4 text-center text-muted">
+                    <i class="bi bi-search fs-1 d-block mb-2 text-secondary"></i>
+                    No se encontraron alumnos que coincidan con la búsqueda <strong>"<?= htmlspecialchars($busqueda) ?>"</strong>.
+                </div>
+            <?php else: ?>
+                <table class="table table-hover align-middle mb-0 table-responsive-cards">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Legajo</th>
+                            <th>DNI</th>
+                            <th>Nombre Completo</th>
+                            <th>Email</th>
+                            <th>Teléfono</th>
+                            <th>Estado</th>
+                            <th class="text-end">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php foreach ($alumnos as $al): ?>
+                        <tr>
+                            <td data-label="Legajo"><span class="fw-bold text-primary"><?= htmlspecialchars($al['legajo']) ?></span></td>
+                            <td data-label="DNI"><?= htmlspecialchars($al['dni']) ?></td>
+                            <td data-label="Nombre"><?= htmlspecialchars($al['apellido'] . ', ' . $al['nombre']) ?></td>
+                            <td data-label="Email"><?= htmlspecialchars($al['email']) ?></td>
+                            <td data-label="Teléfono"><?= htmlspecialchars($al['telefono'] ?? '-') ?></td>
+                            <td data-label="Estado">
+                                <span class="badge bg-<?= $al['estado'] === 'Activo' ? 'success' : 'secondary' ?>">
+                                    <?= $al['estado'] ?>
+                                </span>
+                            </td>
+                            <td data-label="Acciones" class="text-end">
+                                <button class="btn btn-outline-primary btn-sm me-1" 
+                                        data-bs-toggle="modal" 
+                                        data-bs-target="#modalEditarAlumno_<?= $al['id'] ?>">
+                                    <i class="bi bi-pencil-fill"></i>
                                 </button>
-                            </form>
-                            <?php endif; ?>
-                        </td>
-                    </tr>
-                    <?php endforeach; ?>
-                </tbody>
-            </table>
+
+                                <?php if ($rolId == 1): ?>
+                                <form action="alumnos.php" method="POST" class="d-inline" onsubmit="return confirm('¿Confirma eliminar definitivamente a este alumno?');">
+                                    <input type="hidden" name="accion" value="eliminar">
+                                    <input type="hidden" name="id" value="<?= $al['id'] ?>">
+                                    <button type="submit" class="btn btn-outline-danger btn-sm">
+                                        <i class="bi bi-trash-fill"></i>
+                                    </button>
+                                </form>
+                                <?php endif; ?>
+                            </td>
+                        </tr>
+                        <?php endforeach; ?>
+                    </tbody>
+                </table>
+            <?php endif; ?>
         </div>
     </div>
 </div>
 
-<!-- ======================================================================= -->
-<!-- SECCIÓN DE MODALES (Ubicados FUERA de la tabla para evitar fallos de CSS) -->
-<!-- ======================================================================= -->
-
-<!-- Modales de Edición por Alumno -->
+<!-- MODALES (FUERA DE LA TABLA) -->
 <?php foreach ($alumnos as $al): ?>
 <div class="modal fade" id="modalEditarAlumno_<?= $al['id'] ?>" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">

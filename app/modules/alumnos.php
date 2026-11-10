@@ -1,14 +1,36 @@
 <?php
 require_once __DIR__ . '/../config/database.php';
 
-function obtenerAlumnos($pdo) {
-    $stmt = $pdo->query("
+function obtenerAlumnos($pdo, $busqueda = '') {
+    $sql = "
         SELECT a.id, a.usuario_id, a.legajo, a.estado,
                u.dni, u.apellido, u.nombre, u.email, u.telefono
         FROM alumnos a
         INNER JOIN usuarios u ON a.usuario_id = u.id
-        ORDER BY u.apellido ASC, u.nombre ASC
-    ");
+    ";
+
+    $params = [];
+    if (!empty(trim($busqueda))) {
+        $term = '%' . trim($busqueda) . '%';
+        $sql .= " WHERE u.dni LIKE :b1 
+                     OR u.nombre LIKE :b2 
+                     OR u.apellido LIKE :b3 
+                     OR a.legajo LIKE :b4 
+                     OR u.email LIKE :b5";
+        
+        $params = [
+            'b1' => $term,
+            'b2' => $term,
+            'b3' => $term,
+            'b4' => $term,
+            'b5' => $term
+        ];
+    }
+
+    $sql .= " ORDER BY u.apellido ASC, u.nombre ASC";
+
+    $stmt = $pdo->prepare($sql);
+    $stmt->execute($params);
     return $stmt->fetchAll();
 }
 
